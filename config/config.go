@@ -42,7 +42,7 @@ func DefaultConfig() *Config {
 		Redis: RedisConfig{
 			Addr:     ifNilOr(os.Getenv("REDIS_HOST"), "localhost:6379"),
 			Password: ifNilOr(os.Getenv("REDIS_PASSWORD"), ""),
-			DB:       int(ifNilOr(mo.TupleToResult(strconv.ParseInt(os.Getenv("REDIS_DB"), 10, 64)).OrElse(0), 0)),
+			DB:       int(mo.TupleToResult(strconv.ParseInt(ifNilOr(os.Getenv("REDIS_DB"), "0"), 10, 64)).OrElse(0)),
 		},
 		Database: DatabaseConfig{
 			DSN: ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
