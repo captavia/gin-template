@@ -27,7 +27,8 @@ type RedisConfig struct {
 }
 
 type DatabaseConfig struct {
-	DSN string `toml:"dsn"`
+	DSN    string `toml:"dsn"`
+	Prefix string `toml:"prefix"`
 }
 
 func ifNilOr[T any](v T, or T) T {
@@ -45,7 +46,8 @@ func DefaultConfig() *Config {
 			DB:       int(mo.TupleToResult(strconv.ParseInt(ifNilOr(os.Getenv("REDIS_DB"), "0"), 10, 64)).OrElse(0)),
 		},
 		Database: DatabaseConfig{
-			DSN: ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
+			DSN:    ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
+			Prefix: ifNilOr(os.Getenv("DATABASE_PREFIX"), "template_"),
 		},
 	}
 }

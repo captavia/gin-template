@@ -5,6 +5,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/do"
+	"github.com/samber/mo"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -26,23 +27,29 @@ func BuildContainer(cfg *config.Config) *do.Injector {
 		DB:       cfg.Redis.DB,
 	}))
 
-	db, err := gorm.Open(postgres.Open(cfg.Database.DSN), &gorm.Config{
-		NamingStrategy: schema.NamingStrategy{
-			TablePrefix: "betting_",
-		},
-	})
-	if err != nil {
-		log.Println("Warning: Database connection failed (Mocking DB locally maybe?):", err.Error())
-	} else {
-		// 启动时自动迁移表结构
-		err = db.AutoMigrate(
-			&model.User{},
-		)
-		if err != nil {
-			log.Println("AutoMigrate failed:", err.Error())
-		}
-	}
-	do.ProvideValue[*gorm.DB](injector, db)
+	do.ProvideValue[*gorm.DB](injector, mo.
+		TupleToResult(
+			gorm.Open(postgres.Open(cfg.Database.DSN), &gorm.Config{
+				NamingStrategy: schema.NamingStrategy{
+					TablePrefix: cfg.Database.Prefix,
+				},
+			}),
+		).
+		MapErr(func(err error) (*gorm.DB, error) {
+			log.Panicln("Warning: Database connection failed:", err)
+			return nil, err
+		}).
+		// 3. 如果连接成功，则继续执行 AutoMigrate
+		FlatMap(func(db *gorm.DB) mo.Result[*gorm.DB] {
+			return mo.TupleToResult(db, db.AutoMigrate(
+				new(model.User),
+			)).MapErr(
+				func(err error) (*gorm.DB, error) {
+					log.Panicln("AutoMigrate failed:", err)
+					return db, err
+				},
+			)
+		}).MustGet())
 
 	// 3. 注册 Services 层
 	// 使用依赖注入装载服务实例 (由框架自定分析并满足它们需要的 *redis.Client 等)
