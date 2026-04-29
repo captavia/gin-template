@@ -27,6 +27,7 @@ type RedisConfig struct {
 }
 
 type DatabaseConfig struct {
+	DBType string `toml:"db_type"`
 	DSN    string `toml:"dsn"`
 	Prefix string `toml:"prefix"`
 }
@@ -46,6 +47,7 @@ func DefaultConfig() *Config {
 			DB:       int(mo.TupleToResult(strconv.ParseInt(ifNilOr(os.Getenv("REDIS_DB"), "0"), 10, 64)).OrElse(0)),
 		},
 		Database: DatabaseConfig{
+			DBType: ifNilOr(os.Getenv("DATABASE_DB_TYPE"), "postgres"),
 			DSN:    ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
 			Prefix: ifNilOr(os.Getenv("DATABASE_PREFIX"), "template_"),
 		},
