@@ -22,3 +22,11 @@ const (
 var (
 	EmptyStruct = struct{}{}
 )
+
+const (
+	CodeSuccess int = 0
+	CodeError       = iota
+	CodeInvalidIdentifier
+	CodeInvalidParameter
+	CodeInvalidUsernameOrPassword
+)
