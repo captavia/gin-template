@@ -14,6 +14,7 @@ type Config struct {
 	App      AppConfig      `toml:"app"`
 	Redis    RedisConfig    `toml:"redis"`
 	Database DatabaseConfig `toml:"database"`
+	Casbin   CasbinConfig   `toml:"casbin"`
 }
 
 type AppConfig struct {
@@ -30,6 +31,10 @@ type DatabaseConfig struct {
 	DBType string `toml:"db_type"`
 	DSN    string `toml:"dsn"`
 	Prefix string `toml:"prefix"`
+}
+
+type CasbinConfig struct {
+	ModelPath string `toml:"model_path"`
 }
 
 func ifNilOr[T any](v T, or T) T {
@@ -50,6 +55,9 @@ func DefaultConfig() *Config {
 			DBType: ifNilOr(os.Getenv("DATABASE_DB_TYPE"), "postgres"),
 			DSN:    ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
 			Prefix: ifNilOr(os.Getenv("DATABASE_PREFIX"), "template_"),
+		},
+		Casbin: CasbinConfig{
+			ModelPath: ifNilOr(os.Getenv("CASBIN_MODEL_PATH"), "config/rbac_model.conf"),
 		},
 	}
 }

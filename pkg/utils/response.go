@@ -29,4 +29,6 @@ const (
 	CodeInvalidIdentifier
 	CodeInvalidParameter
 	CodeInvalidUsernameOrPassword
+	CodeNoPermission
+	CodeInternalError
 )
