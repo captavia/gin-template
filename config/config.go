@@ -15,6 +15,7 @@ type Config struct {
 	Redis    RedisConfig    `toml:"redis"`
 	Database DatabaseConfig `toml:"database"`
 	Casbin   CasbinConfig   `toml:"casbin"`
+	S3       S3Config       `toml:"s3"`
 }
 
 type AppConfig struct {
@@ -35,6 +36,14 @@ type DatabaseConfig struct {
 
 type CasbinConfig struct {
 	ModelPath string `toml:"model_path"`
+}
+
+type S3Config struct {
+	Endpoint        string `toml:"endpoint"`
+	AccessKeyID     string `toml:"access_key_id"`
+	SecretAccessKey string `toml:"secret_access_key"`
+	Bucket          string `toml:"bucket"`
+	Region          string `toml:"region"`
 }
 
 func ifNilOr[T any](v T, or T) T {
@@ -58,6 +67,13 @@ func DefaultConfig() *Config {
 		},
 		Casbin: CasbinConfig{
 			ModelPath: ifNilOr(os.Getenv("CASBIN_MODEL_PATH"), "config/rbac_model.conf"),
+		},
+		S3: S3Config{
+			Endpoint:        ifNilOr(os.Getenv("S3_ENDPOINT"), ""),
+			AccessKeyID:     ifNilOr(os.Getenv("S3_ACCESS_KEY_ID"), ""),
+			SecretAccessKey: ifNilOr(os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
+			Bucket:          ifNilOr(os.Getenv("S3_BUCKET"), ""),
+			Region:          ifNilOr(os.Getenv("S3_REGION"), "us-east-1"),
 		},
 	}
 }
