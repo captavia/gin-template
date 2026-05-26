@@ -40,6 +40,7 @@ type CasbinConfig struct {
 
 type S3Config struct {
 	Endpoint        string `toml:"endpoint"`
+	SSL             bool   `toml:"ssl"`
 	AccessKeyID     string `toml:"access_key_id"`
 	SecretAccessKey string `toml:"secret_access_key"`
 	Bucket          string `toml:"bucket"`

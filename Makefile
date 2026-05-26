@@ -1,2 +1,2 @@
 all:
-	go build -ldflags="-s -w" -trimpath -o ./build/ ./cmd/api
+	go build -ldflags="-s -w" -trimpath -tags=nomsgpack -o ./build/ ./cmd/api
