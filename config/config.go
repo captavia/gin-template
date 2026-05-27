@@ -16,6 +16,7 @@ type Config struct {
 	Database DatabaseConfig `toml:"database"`
 	Casbin   CasbinConfig   `toml:"casbin"`
 	S3       S3Config       `toml:"s3"`
+	Nats     NatsConfig     `toml:"nats"`
 }
 
 type AppConfig struct {
@@ -47,6 +48,10 @@ type S3Config struct {
 	Region          string `toml:"region"`
 }
 
+type NatsConfig struct {
+	URL string `toml:"url" comment:"example: nats://derek:secretpassword@demo.nats.io:4222"`
+}
+
 func ifNilOr[T any](v T, or T) T {
 	return lo.Ternary(lo.IsNil(v), v, or)
 }
@@ -75,6 +80,9 @@ func DefaultConfig() *Config {
 			SecretAccessKey: ifNilOr(os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
 			Bucket:          ifNilOr(os.Getenv("S3_BUCKET"), ""),
 			Region:          ifNilOr(os.Getenv("S3_REGION"), "us-east-1"),
+		},
+		Nats: NatsConfig{
+			URL: ifNilOr(os.Getenv("NATS_URL"), "nats://localhost:4222"),
 		},
 	}
 }
