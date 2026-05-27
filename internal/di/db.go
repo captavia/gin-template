@@ -34,6 +34,7 @@ func ProvideDB(i *do.Injector, cfg *config.Config) {
 		// 2. 建立数据库连接
 		db := mo.TupleToResult(
 			gorm.Open(dialer, &gorm.Config{
+				DisableForeignKeyConstraintWhenMigrating: true,
 				NamingStrategy: schema.NamingStrategy{
 					TablePrefix: cfg.Database.Prefix,
 				},
