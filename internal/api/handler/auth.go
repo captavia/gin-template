@@ -11,12 +11,12 @@ import (
 )
 
 type AuthHandler struct {
-	authService service.AuthService
+	authService *service.AuthService
 }
 
 func NewAuthHandler(i *do.Injector) (*AuthHandler, error) {
 	return &AuthHandler{
-		authService: do.MustInvoke[service.AuthService](i),
+		authService: do.MustInvoke[*service.AuthService](i),
 	}, nil
 }
 
