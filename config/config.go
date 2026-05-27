@@ -14,7 +14,6 @@ type Config struct {
 	App      AppConfig      `toml:"app"`
 	Redis    RedisConfig    `toml:"redis"`
 	Database DatabaseConfig `toml:"database"`
-	Casbin   CasbinConfig   `toml:"casbin"`
 	S3       S3Config       `toml:"s3"`
 	Nats     NatsConfig     `toml:"nats"`
 }
@@ -33,10 +32,6 @@ type DatabaseConfig struct {
 	DBType string `toml:"db_type"`
 	DSN    string `toml:"dsn"`
 	Prefix string `toml:"prefix"`
-}
-
-type CasbinConfig struct {
-	ModelPath string `toml:"model_path"`
 }
 
 type S3Config struct {
@@ -70,9 +65,6 @@ func DefaultConfig() *Config {
 			DBType: ifNilOr(os.Getenv("DATABASE_DB_TYPE"), "postgres"),
 			DSN:    ifNilOr(os.Getenv("DATABASE_DSN"), "postgres://postgres:P@ssword@localhost:5432/postgres?sslmode=disable&TimeZone=Asia/Shanghai"),
 			Prefix: ifNilOr(os.Getenv("DATABASE_PREFIX"), "template_"),
-		},
-		Casbin: CasbinConfig{
-			ModelPath: ifNilOr(os.Getenv("CASBIN_MODEL_PATH"), "config/rbac_model.conf"),
 		},
 		S3: S3Config{
 			Endpoint:        ifNilOr(os.Getenv("S3_ENDPOINT"), ""),
