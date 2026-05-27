@@ -26,8 +26,9 @@ func BuildContainer(cfg *config.Config) *do.Injector {
 	ProvideNats(injector, cfg)
 
 	// 3. 注册 Services 层
-	// 使用依赖注入装载服务实例 (由框架自定分析并满足它们需要的 *redis.Client 等)
+	// 使用依赖注入装载服务实例 (由框架自动分析并满足它们需要的依赖)
 	do.Provide(injector, service.NewAuthService)
+	do.Provide(injector, service.NewRBACService)
 
 	// 4. 注册 Handlers层
 	// 组装的时候会自动注入以上准备好的 Service

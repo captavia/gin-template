@@ -47,6 +47,8 @@ func ProvideDB(i *do.Injector, cfg *config.Config) {
 		// 3. 执行自动迁移
 		_ = mo.TupleToResult(db, db.AutoMigrate(
 			new(model.User),
+			new(model.Permission),
+			new(model.Role),
 		)).MapErr(
 			func(err error) (*gorm.DB, error) {
 				log.Printf("[Fatal] AutoMigrate failed: %v\n", err)
