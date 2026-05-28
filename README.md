@@ -11,6 +11,7 @@ This is a modern and modular Web API project template built with Go and the Gin 
 - **Cache**: Redis
 - **Object Storage**: MinIO Go SDK
 - **Message Queue**: NATS
+- **Access Control (RBAC)**: Custom implementation based on gorbac/v3 with database persistence
 - **Authentication**: JWT Token
 
 ## Directory Structure
@@ -44,18 +45,18 @@ The project supports configuration via TOML files or environment variables. The 
 
 | Module | Environment Variables | Default Value |
 | :--- | :--- | :--- |
-| **App** | APP_HOST | localhost:8080 |
+| **App** | APP_HOST / APP_JWT_SECRET | localhost:8080 / secret |
 | **Database** | DATABASE_DB_TYPE / DATABASE_DSN | postgres / Default PostgreSQL DSN |
 | **Redis** | REDIS_HOST / REDIS_PASSWORD / REDIS_DB | localhost:6379 |
 | **S3** | S3_ENDPOINT / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY / S3_BUCKET / S3_REGION | s3.amazonaws.com |
-| **NATS** | NATS_URL / NATS_USERNAME / NATS_PASSWORD | nats://localhost:4222 |
+| **NATS** | NATS_URL | nats://localhost:4222 |
 
 ## Dependency Injection
 
 This project uses github.com/samber/do for dependency injection. Various external components and internal services are registered centrally in internal/di/container.go:
 
-1. **Infrastructure**: ProvideRedis, ProvideDB, ProvideS3, ProvideNats
-2. **Services**: service.NewAuthService
+1. **Infrastructure**: ProvideRedis, ProvideDB, ProvideRBAC, ProvideS3, ProvideNats
+2. **Services**: service.NewAuthService, service.NewRBACService
 3. **Handlers**: handler.NewAuthHandler
 
 ## Build and Run
