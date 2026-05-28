@@ -1,21 +1,30 @@
-package utils
+package service
 
 import (
 	"errors"
+	"template/config"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/samber/do"
 )
-
-// 为了简化，此处硬编码 secret。生产环境应从 config 注入。
-var jwtSecret = []byte("bookmarket-super-secret-key")
 
 type Claims struct {
 	UserID uint `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID uint) (string, error) {
+type JwtService struct {
+	secret []byte
+}
+
+func NewJwtService(i *do.Injector) (*JwtService, error) {
+	return &JwtService{
+		secret: []byte(do.MustInvoke[*config.Config](i).App.JwtSecret),
+	}, nil
+}
+
+func (s *JwtService) GenerateToken(userID uint) (string, error) {
 	now := time.Now()
 	claims := Claims{
 		UserID: userID,
@@ -25,12 +34,12 @@ func GenerateToken(userID uint) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(s.secret)
 }
 
-func ParseToken(tokenStr string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
+func (s *JwtService) ParseToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return s.secret, nil
 	})
 	if err != nil {
 		return nil, err

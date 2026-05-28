@@ -4,13 +4,16 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"template/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/samber/do"
 
 	"template/pkg/utils"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(i *do.Injector) gin.HandlerFunc {
+	jwtService := do.MustInvoke[*service.JwtService](i)
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -26,7 +29,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		claims, err := utils.ParseToken(parts[1])
+		claims, err := jwtService.ParseToken(parts[1])
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, utils.Err(utils.CodeInvalidIdentifier, err))
 			c.Abort()

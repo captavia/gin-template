@@ -10,16 +10,17 @@ import (
 	"gorm.io/gorm"
 
 	"template/internal/model"
-	"template/pkg/utils"
 )
 
 type AuthService struct {
-	db *gorm.DB
+	db         *gorm.DB
+	jwtService *JwtService
 }
 
 func NewAuthService(i *do.Injector) (*AuthService, error) {
 	return &AuthService{
-		db: do.MustInvoke[*gorm.DB](i),
+		db:         do.MustInvoke[*gorm.DB](i),
+		jwtService: do.MustInvoke[*JwtService](i),
 	}, nil
 }
 
@@ -56,5 +57,5 @@ func (s *AuthService) Login(ctx context.Context, phone, password string) (string
 		return "", errors.New("invalid phone or password")
 	}
 
-	return utils.GenerateToken(user.ID)
+	return s.jwtService.GenerateToken(user.ID)
 }

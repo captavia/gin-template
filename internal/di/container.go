@@ -27,6 +27,7 @@ func BuildContainer(cfg *config.Config) *do.Injector {
 
 	// 3. 注册 Services 层
 	// 使用依赖注入装载服务实例 (由框架自动分析并满足它们需要的依赖)
+	do.Provide(injector, service.NewJwtService)
 	do.Provide(injector, service.NewAuthService)
 	do.Provide(injector, service.NewRBACService)
 

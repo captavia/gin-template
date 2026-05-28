@@ -19,7 +19,8 @@ type Config struct {
 }
 
 type AppConfig struct {
-	Host string `toml:"host"`
+	Host      string `toml:"host"`
+	JwtSecret string `toml:"jwt_secret"`
 }
 
 type RedisConfig struct {
@@ -54,7 +55,8 @@ func ifNilOr[T any](v T, or T) T {
 func DefaultConfig() *Config {
 	return &Config{
 		App: AppConfig{
-			Host: ifNilOr(os.Getenv("APP_HOST"), "localhost:8080"),
+			Host:      ifNilOr(os.Getenv("APP_HOST"), "localhost:8080"),
+			JwtSecret: ifNilOr(os.Getenv("APP_JWT_SECRET"), "secret"),
 		},
 		Redis: RedisConfig{
 			Addr:     ifNilOr(os.Getenv("REDIS_HOST"), "localhost:6379"),
