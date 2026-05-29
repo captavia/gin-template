@@ -6,6 +6,7 @@ require (
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/mikespook/gorbac/v3 v3.0.0-20260517110610-c7dff02c346b
 	github.com/minio/minio-go/v7 v7.1.0
 	github.com/nats-io/nats.go v1.41.2
 	github.com/pelletier/go-toml/v2 v2.3.0
@@ -13,6 +14,7 @@ require (
 	github.com/samber/do v1.6.0
 	github.com/samber/lo v1.53.0
 	github.com/samber/mo v1.16.0
+	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.50.0
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -49,7 +51,6 @@ require (
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
-	github.com/mikespook/gorbac/v3 v3.0.0-20260517110610-c7dff02c346b // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -66,6 +67,7 @@ require (
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.26.0 // indirect
 	golang.org/x/net v0.53.0 // indirect

@@ -13,6 +13,9 @@ func BuildContainer(cfg *config.Config) *do.Injector {
 
 	do.ProvideValue(injector, cfg)
 
+	// 注册日志
+	ProvideZap(injector, cfg)
+
 	// 注册redis
 	ProvideRedis(injector, cfg)
 

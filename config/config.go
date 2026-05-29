@@ -12,6 +12,7 @@ import (
 
 type Config struct {
 	App      AppConfig      `toml:"app"`
+	Log      LogConfig      `toml:"log"`
 	Redis    RedisConfig    `toml:"redis"`
 	Database DatabaseConfig `toml:"database"`
 	S3       S3Config       `toml:"s3"`
@@ -21,6 +22,10 @@ type Config struct {
 type AppConfig struct {
 	Host      string `toml:"host"`
 	JwtSecret string `toml:"jwt_secret"`
+}
+
+type LogConfig struct {
+	Level string `toml:"level"`
 }
 
 type RedisConfig struct {
@@ -57,6 +62,9 @@ func DefaultConfig() *Config {
 		App: AppConfig{
 			Host:      ifNilOr(os.Getenv("APP_HOST"), "localhost:8080"),
 			JwtSecret: ifNilOr(os.Getenv("APP_JWT_SECRET"), "secret"),
+		},
+		Log: LogConfig{
+			Level: ifNilOr(os.Getenv("LOG_LEVEL"), "info"),
 		},
 		Redis: RedisConfig{
 			Addr:     ifNilOr(os.Getenv("REDIS_HOST"), "localhost:6379"),
