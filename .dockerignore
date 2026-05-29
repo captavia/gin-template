@@ -1,0 +1,15 @@
+# Ignore git directory and metadata
+.git
+.gitignore
+
+# Ignore build directory to prevent copying host binaries
+build/
+
+# Ignore development/editor configurations
+.idea/
+.vscode/
+*.local
+
+# Ignore Docker-related files
+Dockerfile
+.dockerignore
