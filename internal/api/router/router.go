@@ -1,6 +1,8 @@
 package router
 
 import (
+	"template/pkg/warp"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/do"
@@ -20,8 +22,8 @@ func SetupRouter(injector *do.Injector) *gin.Engine {
 	authHandler := do.MustInvoke[*handler.AuthHandler](injector)
 
 	// -- 认证系统 --
-	apiV1.POST("/auth/register", authHandler.Register)
-	apiV1.POST("/auth/login", authHandler.Login)
+	apiV1.POST("/auth/register", warp.WrapTyped(authHandler.Register))
+	apiV1.POST("/auth/login", warp.WrapTyped(authHandler.Login))
 
 	return r
 }

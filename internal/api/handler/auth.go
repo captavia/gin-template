@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/samber/do"
+	"github.com/samber/mo"
 
 	"template/internal/service"
 )
@@ -25,33 +26,23 @@ type authRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-func (h *AuthHandler) Register(c *gin.Context) {
-	var req authRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.Err(utils.CodeInvalidParameter, err))
-		return
-	}
-
+func (h *AuthHandler) Register(c *gin.Context, req *authRequest) mo.Result[string] {
 	if err := h.authService.Register(c.Request.Context(), req.Phone, req.Password); err != nil {
-		c.JSON(http.StatusConflict, utils.Err(utils.CodeError, err))
-		return
+		return mo.Err[string](utils.Err(http.StatusConflict, err))
 	}
 
-	c.JSON(http.StatusOK, utils.Ok("register successfully"))
+	return mo.Ok("register successfully")
 }
 
-func (h *AuthHandler) Login(c *gin.Context) {
-	var req authRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, utils.Err(utils.CodeInvalidParameter, err))
-		return
-	}
+type LoginResponse struct {
+	Token string `json:"token"`
+}
 
+func (h *AuthHandler) Login(c *gin.Context, req *authRequest) mo.Result[LoginResponse] {
 	token, err := h.authService.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, utils.Err(utils.CodeInvalidUsernameOrPassword, err))
-		return
+		return mo.Err[LoginResponse](utils.Err(http.StatusUnauthorized, err))
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	return mo.Ok(LoginResponse{Token: token})
 }

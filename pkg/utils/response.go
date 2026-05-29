@@ -6,12 +6,16 @@ type Response struct {
 	Data    any    `json:"data"`
 }
 
-func Ok(data any) Response {
-	return Response{Code: 0, Message: SuccessMessage, Data: data}
+func (e *Response) Error() string {
+	return e.Message
 }
 
-func Err(code int, msg error) Response {
-	return Response{Code: code, Message: msg.Error(), Data: EmptyStruct}
+func Ok(data any) *Response {
+	return &Response{Code: CodeSuccess, Message: SuccessMessage, Data: data}
+}
+
+func Err(code int, msg error) *Response {
+	return &Response{Code: code, Message: msg.Error(), Data: EmptyStruct}
 }
 
 const (
