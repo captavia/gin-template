@@ -1,7 +1,7 @@
 package router
 
 import (
-	"template/pkg/warp"
+	"template/pkg/wrap"
 
 	"template/internal/api/handler"
 
@@ -22,8 +22,8 @@ func SetupRouter(injector do.Injector) *gin.Engine {
 	authHandler := do.MustInvoke[*handler.AuthHandler](injector)
 
 	// -- 认证系统 --
-	apiV1.POST("/auth/register", warp.WrapTyped(authHandler.Register))
-	apiV1.POST("/auth/login", warp.WrapTyped(authHandler.Login))
+	apiV1.POST("/auth/register", wrap.WrapTyped(authHandler.Register))
+	apiV1.POST("/auth/login", wrap.WrapTyped(authHandler.Login))
 
 	return r
 }
