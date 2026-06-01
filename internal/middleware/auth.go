@@ -4,11 +4,12 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"template/internal/service"
 
+	"template/internal/service"
 	"template/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/samber/do/v2"
 )
 
 func AuthMiddleware(i do.Injector) gin.HandlerFunc {
