@@ -4,10 +4,10 @@ import (
 	"template/config"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 )
 
-func ProvideRedis(i *do.Injector, cfg *config.Config) {
+func ProvideRedis(i do.Injector, cfg *config.Config) {
 	do.ProvideValue(i, redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,
 		Password: cfg.Redis.Password,

@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/mikespook/gorbac/v3"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"gorm.io/gorm"
 
 	"template/internal/model"
@@ -18,7 +18,7 @@ type RBACService struct {
 	rbacManager *gorbac.RBAC[uint]
 }
 
-func NewRBACService(i *do.Injector) (*RBACService, error) {
+func NewRBACService(i do.Injector) (*RBACService, error) {
 	s := &RBACService{
 		db:          do.MustInvoke[*gorm.DB](i),
 		rwm:         &sync.RWMutex{},

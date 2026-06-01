@@ -5,7 +5,7 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
@@ -17,7 +17,7 @@ type AuthService struct {
 	jwtService *JwtService
 }
 
-func NewAuthService(i *do.Injector) (*AuthService, error) {
+func NewAuthService(i do.Injector) (*AuthService, error) {
 	return &AuthService{
 		db:         do.MustInvoke[*gorm.DB](i),
 		jwtService: do.MustInvoke[*JwtService](i),

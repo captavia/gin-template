@@ -3,14 +3,14 @@ package router
 import (
 	"template/pkg/warp"
 
+	"template/internal/api/handler"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/samber/do"
-
-	"template/internal/api/handler"
+	"github.com/samber/do/v2"
 )
 
-func SetupRouter(injector *do.Injector) *gin.Engine {
+func SetupRouter(injector do.Injector) *gin.Engine {
 	r := gin.Default()
 
 	// 跨域处理，适应前后端分离和 SSE API

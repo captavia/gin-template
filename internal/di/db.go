@@ -6,7 +6,7 @@ import (
 	"template/config"
 	"template/internal/model"
 
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"github.com/samber/mo"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func ProvideDB(i *do.Injector, cfg *config.Config) {
+func ProvideDB(i do.Injector, cfg *config.Config) {
 	do.ProvideValue[*gorm.DB](i, mo.Do(func() *gorm.DB {
 		dialer := func(dbType, dsn string) mo.Result[gorm.Dialector] {
 			switch dbType {

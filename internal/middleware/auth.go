@@ -6,13 +6,12 @@ import (
 	"strings"
 	"template/internal/service"
 
-	"github.com/gin-gonic/gin"
-	"github.com/samber/do"
-
 	"template/pkg/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(i *do.Injector) gin.HandlerFunc {
+func AuthMiddleware(i do.Injector) gin.HandlerFunc {
 	jwtService := do.MustInvoke[*service.JwtService](i)
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")

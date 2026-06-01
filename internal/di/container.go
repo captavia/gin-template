@@ -1,14 +1,14 @@
 package di
 
 import (
-	"github.com/samber/do"
-
 	"template/config"
 	"template/internal/api/handler"
 	"template/internal/service"
+
+	"github.com/samber/do/v2"
 )
 
-func BuildContainer(cfg *config.Config) *do.Injector {
+func BuildContainer(cfg *config.Config) do.Injector {
 	injector := do.New()
 
 	do.ProvideValue(injector, cfg)

@@ -5,7 +5,7 @@ import (
 	"template/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"github.com/samber/mo"
 
 	"template/internal/service"
@@ -15,7 +15,7 @@ type AuthHandler struct {
 	authService *service.AuthService
 }
 
-func NewAuthHandler(i *do.Injector) (*AuthHandler, error) {
+func NewAuthHandler(i do.Injector) (*AuthHandler, error) {
 	return &AuthHandler{
 		authService: do.MustInvoke[*service.AuthService](i),
 	}, nil

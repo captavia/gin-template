@@ -3,15 +3,15 @@ package di
 import (
 	"strings"
 
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"template/config"
 )
 
-func ProvideZap(injector *do.Injector, cfg *config.Config) {
-	do.Provide(injector, func(i *do.Injector) (*zap.Logger, error) {
+func ProvideZap(injector do.Injector, cfg *config.Config) {
+	do.Provide(injector, func(i do.Injector) (*zap.Logger, error) {
 		level := zapcore.InfoLevel
 		switch strings.ToLower(cfg.Log.Level) {
 		case "debug":

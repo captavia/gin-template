@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/samber/do"
+	"github.com/samber/do/v2"
 )
 
 type Claims struct {
@@ -18,7 +18,7 @@ type JwtService struct {
 	secret []byte
 }
 
-func NewJwtService(i *do.Injector) (*JwtService, error) {
+func NewJwtService(i do.Injector) (*JwtService, error) {
 	return &JwtService{
 		secret: []byte(do.MustInvoke[*config.Config](i).App.JwtSecret),
 	}, nil
