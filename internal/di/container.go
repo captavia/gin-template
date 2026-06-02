@@ -3,7 +3,7 @@ package di
 import (
 	"template/config"
 	"template/internal/api/handler"
-	"template/internal/service"
+	"template/internal/api/service"
 
 	"github.com/samber/do/v2"
 )

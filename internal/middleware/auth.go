@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"template/internal/service"
+	"template/internal/api/service"
 	"template/pkg/utils"
 
 	"github.com/gin-gonic/gin"

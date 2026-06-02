@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"template/config"
-	"template/internal/model"
 
 	"github.com/samber/do/v2"
 	"github.com/samber/mo"
@@ -43,18 +42,6 @@ func ProvideDB(i do.Injector, cfg *config.Config) {
 			log.Printf("[Fatal] Database connection failed: %v\n", err)
 			return nil, err
 		}).MustGet()
-
-		// 3. 执行自动迁移
-		_ = mo.TupleToResult(db, db.AutoMigrate(
-			new(model.User),
-			new(model.Permission),
-			new(model.Role),
-		)).MapErr(
-			func(err error) (*gorm.DB, error) {
-				log.Printf("[Fatal] AutoMigrate failed: %v\n", err)
-				return nil, err
-			},
-		).MustGet()
 
 		return db
 	}).MustGet())

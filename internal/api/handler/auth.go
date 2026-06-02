@@ -8,7 +8,7 @@ import (
 	"github.com/samber/do/v2"
 	"github.com/samber/mo"
 
-	"template/internal/service"
+	"template/internal/api/service"
 )
 
 type AuthHandler struct {
