@@ -12,12 +12,12 @@ import (
 )
 
 type AuthHandler struct {
-	authService *service.AuthService
+	userService *service.UserService
 }
 
 func NewAuthHandler(i do.Injector) (*AuthHandler, error) {
 	return &AuthHandler{
-		authService: do.MustInvoke[*service.AuthService](i),
+		userService: do.MustInvoke[*service.UserService](i),
 	}, nil
 }
 
@@ -27,7 +27,7 @@ type authRequest struct {
 }
 
 func (h *AuthHandler) Register(c *gin.Context, req *authRequest) mo.Result[string] {
-	if err := h.authService.Register(c.Request.Context(), req.Phone, req.Password); err != nil {
+	if err := h.userService.Register(c.Request.Context(), req.Phone, req.Password); err != nil {
 		return mo.Err[string](utils.Err(http.StatusConflict, err))
 	}
 
@@ -39,7 +39,7 @@ type LoginResponse struct {
 }
 
 func (h *AuthHandler) Login(c *gin.Context, req *authRequest) mo.Result[LoginResponse] {
-	token, err := h.authService.Login(c.Request.Context(), req.Phone, req.Password)
+	token, err := h.userService.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
 		return mo.Err[LoginResponse](utils.Err(http.StatusUnauthorized, err))
 	}

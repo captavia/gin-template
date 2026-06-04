@@ -12,19 +12,21 @@ import (
 	"template/internal/model"
 )
 
-type AuthService struct {
-	db         *gorm.DB
-	jwtService *JwtService
+type UserService struct {
+	db          *gorm.DB
+	jwtService  *JwtService
+	rbcaService *RBACService
 }
 
-func NewAuthService(i do.Injector) (*AuthService, error) {
-	return &AuthService{
-		db:         do.MustInvoke[*gorm.DB](i),
-		jwtService: do.MustInvoke[*JwtService](i),
+func NewAuthService(i do.Injector) (*UserService, error) {
+	return &UserService{
+		db:          do.MustInvoke[*gorm.DB](i),
+		jwtService:  do.MustInvoke[*JwtService](i),
+		rbcaService: do.MustInvoke[*RBACService](i),
 	}, nil
 }
 
-func (s *AuthService) Register(ctx context.Context, phone, password string) error {
+func (s *UserService) Register(ctx context.Context, phone, password string) error {
 	matched, _ := regexp.MatchString(`^1[3-9]\d{9}$|^\+?[1-9]\d{1,14}$`, phone)
 	if !matched {
 		return errors.New("invalid phone number format")
@@ -44,7 +46,7 @@ func (s *AuthService) Register(ctx context.Context, phone, password string) erro
 	return s.db.WithContext(ctx).Create(user).Error
 }
 
-func (s *AuthService) Login(ctx context.Context, phone, password string) (string, error) {
+func (s *UserService) Login(ctx context.Context, phone, password string) (string, error) {
 	var user model.User
 	if err := s.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

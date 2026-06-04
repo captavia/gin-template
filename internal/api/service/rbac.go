@@ -24,6 +24,11 @@ func NewRBACService(i do.Injector) (*RBACService, error) {
 		rwm:         &sync.RWMutex{},
 		rbacManager: gorbac.New[uint](),
 	}
+
+	if err := s.InitDefaultData(); err != nil {
+		log.Fatalf("[RBAC] Failed to init default data: %v", err)
+	}
+
 	s.LoadFromDB()
 
 	return s, nil
@@ -64,6 +69,42 @@ func (s *RBACService) LoadFromDB() {
 	s.rwm.Unlock()
 
 	log.Printf("[RBAC] Loaded %d roles from DB", len(roles))
+}
+
+func (s *RBACService) InitDefaultData() error {
+	// 1. 定义需要初始化的默认权限
+	defaultPerms := []model.Permission{
+		{Model: gorm.Model{ID: model.PermCreateUser}, Code: "create_user", Name: "创建用户"},
+		{Model: gorm.Model{ID: model.PermEditUser}, Code: "edit_user", Name: "编辑用户"},
+		{Model: gorm.Model{ID: model.PermDeleteUser}, Code: "delete_user", Name: "删除用户"},
+		{Model: gorm.Model{ID: model.PermManageRoles}, Code: "manage_roles", Name: "角色管理"},
+	}
+
+	// 将默认权限写入数据库 (存在则忽略，不存在则创建)
+	for _, p := range defaultPerms {
+		// 根据 ID 查找，找不到就用给定的值创建
+		if err := s.db.Where(model.Permission{Model: gorm.Model{ID: p.ID}}).FirstOrCreate(&p).Error; err != nil {
+			return err
+		}
+	}
+
+	// 2. 定义需要初始化的默认角色
+	defaultRoles := []model.Role{
+		{Model: gorm.Model{ID: model.RoleSuperAdmin}, Code: "super_admin", Name: "超级管理员"},
+		{Model: gorm.Model{ID: model.RoleManager}, Code: "manager", Name: "普通管理员"},
+		{Model: gorm.Model{ID: model.RoleNormalUser}, Code: "user", Name: "普通用户"},
+	}
+
+	for _, r := range defaultRoles {
+		if err := s.db.Where(model.Role{Model: gorm.Model{ID: r.ID}}).FirstOrCreate(&r).Error; err != nil {
+			return err
+		}
+	}
+
+	// 3. 为默认角色分配初始权限 (可选逻辑)
+	_ = s.AssignPermission(model.RoleSuperAdmin, model.PermManageRoles)
+
+	return nil
 }
 
 // IsGranted 检查指定角色是否拥有某个权限（含继承）。
