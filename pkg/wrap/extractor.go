@@ -46,6 +46,13 @@ func (j *JSON[T]) Extract(c *gin.Context) error {
 	return c.ShouldBindJSON(&j.Data)
 }
 
+type File[T any] struct{ Data T }
+
+func (f *File[T]) Extract(c *gin.Context) error {
+	applyDefaults(&f.Data)
+	return c.ShouldBindWith(&f.Data, binding.FormMultipart)
+}
+
 type Auth[T any] struct {
 	Data T
 }
