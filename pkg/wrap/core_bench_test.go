@@ -188,3 +188,55 @@ func copyByValue(data JSON[BenchRequest]) JSON[BenchRequest] {
 func copyByValueLarge(data JSON[LargeRequest]) JSON[LargeRequest] {
 	return data
 }
+
+// 直接 bind 版本（无 Wrap）
+func BenchmarkDirectBind_Normal(b *testing.B) {
+	gin.SetMode(gin.ReleaseMode)
+
+	handler := func(c *gin.Context) {
+		var req BenchRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(200, gin.H{"status": "ok"})
+	}
+
+	jsonBody := `{"name":"test","email":"test@example.com","age":25,"address":"123 Main St"}`
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+
+		handler(c)
+	}
+}
+
+// WrapTyped 版本
+func handlerTyped(c *gin.Context, req *BenchRequest) mo.Result[BenchResponse] {
+	return mo.Ok(BenchResponse{Status: "ok"})
+}
+
+func BenchmarkWrapTyped_Normal(b *testing.B) {
+	gin.SetMode(gin.ReleaseMode)
+	handler := WrapTyped(handlerTyped)
+
+	jsonBody := `{"name":"test","email":"test@example.com","age":25,"address":"123 Main St"}`
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		c, _ := gin.CreateTestContext(w)
+		c.Request = req
+
+		handler(c)
+	}
+}
