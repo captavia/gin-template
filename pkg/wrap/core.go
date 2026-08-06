@@ -39,108 +39,153 @@ func WrapTyped[Req any, Res any](h TypedHandler[Req, Res]) gin.HandlerFunc {
 	}
 }
 
-func Wrap1[T1 Extractor, Res any](h func(t1 *T1) mo.Result[Res]) gin.HandlerFunc {
+func Wrap1[T1 any, PT1 interface {
+	*T1
+	Extractor
+}, Res any](h func(t1 T1) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var t1 T1
-		if err := t1.Extract(c); err != nil {
+		t1 := new(T1)
+		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(&t1))
+		handleResult(c, h(*t1))
 	}
 }
 
-func Wrap2[T1, T2 Extractor, Res any](h func(t1 *T1, t2 *T2) mo.Result[Res]) gin.HandlerFunc {
+func Wrap2[T1, T2 any, PT1 interface {
+	*T1
+	Extractor
+}, PT2 interface {
+	*T2
+	Extractor
+}, Res any](h func(t1 T1, t2 T2) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var t1 T1
-		var t2 T2
-		if err := t1.Extract(c); err != nil {
+		t1 := new(T1)
+		t2 := new(T2)
+		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t2.Extract(c); err != nil {
+		if err := PT2(t2).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(&t1, &t2))
+		handleResult(c, h(*t1, *t2))
 	}
 }
 
-func Wrap3[T1, T2, T3 Extractor, Res any](h func(t1 *T1, t2 *T2, t3 *T3) mo.Result[Res]) gin.HandlerFunc {
+func Wrap3[T1, T2, T3 any, PT1 interface {
+	*T1
+	Extractor
+}, PT2 interface {
+	*T2
+	Extractor
+}, PT3 interface {
+	*T3
+	Extractor
+}, Res any](h func(t1 T1, t2 T2, t3 T3) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var t1 T1
-		var t2 T2
-		var t3 T3
-		if err := t1.Extract(c); err != nil {
+		t1 := new(T1)
+		t2 := new(T2)
+		t3 := new(T3)
+		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t2.Extract(c); err != nil {
+		if err := PT2(t2).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t3.Extract(c); err != nil {
+		if err := PT3(t3).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(&t1, &t2, &t3))
+		handleResult(c, h(*t1, *t2, *t3))
 	}
 }
 
-func Wrap4[T1, T2, T3, T4 Extractor, Res any](h func(t1 *T1, t2 *T2, t3 *T3, t4 *T4) mo.Result[Res]) gin.HandlerFunc {
+func Wrap4[T1, T2, T3, T4 any, PT1 interface {
+	*T1
+	Extractor
+}, PT2 interface {
+	*T2
+	Extractor
+}, PT3 interface {
+	*T3
+	Extractor
+}, PT4 interface {
+	*T4
+	Extractor
+}, Res any](h func(t1 T1, t2 T2, t3 T3, t4 T4) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var t1 T1
-		var t2 T2
-		var t3 T3
-		var t4 T4
-		if err := t1.Extract(c); err != nil {
+		t1 := new(T1)
+		t2 := new(T2)
+		t3 := new(T3)
+		t4 := new(T4)
+		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t2.Extract(c); err != nil {
+		if err := PT2(t2).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t3.Extract(c); err != nil {
+		if err := PT3(t3).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t4.Extract(c); err != nil {
+		if err := PT4(t4).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(&t1, &t2, &t3, &t4))
+		handleResult(c, h(*t1, *t2, *t3, *t4))
 	}
 }
 
-func Wrap5[T1, T2, T3, T4, T5 Extractor, Res any](h func(t1 *T1, t2 *T2, t3 *T3, t4 *T4, t5 *T5) mo.Result[Res]) gin.HandlerFunc {
+func Wrap5[T1, T2, T3, T4, T5 any, PT1 interface {
+	*T1
+	Extractor
+}, PT2 interface {
+	*T2
+	Extractor
+}, PT3 interface {
+	*T3
+	Extractor
+}, PT4 interface {
+	*T4
+	Extractor
+}, PT5 interface {
+	*T5
+	Extractor
+}, Res any](h func(t1 T1, t2 T2, t3 T3, t4 T4, t5 T5) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var t1 T1
-		var t2 T2
-		var t3 T3
-		var t4 T4
-		var t5 T5
-		if err := t1.Extract(c); err != nil {
+		t1 := new(T1)
+		t2 := new(T2)
+		t3 := new(T3)
+		t4 := new(T4)
+		t5 := new(T5)
+		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t2.Extract(c); err != nil {
+		if err := PT2(t2).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t3.Extract(c); err != nil {
+		if err := PT3(t3).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t4.Extract(c); err != nil {
+		if err := PT4(t4).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		if err := t5.Extract(c); err != nil {
+		if err := PT5(t5).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(&t1, &t2, &t3, &t4, &t5))
+		handleResult(c, h(*t1, *t2, *t3, *t4, *t5))
 	}
 }
 

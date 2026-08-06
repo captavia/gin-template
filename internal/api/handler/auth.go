@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"template/pkg/utils"
+	"template/pkg/wrap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/samber/do/v2"
@@ -38,11 +39,6 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
-func (h *AuthHandler) Login(c *gin.Context, req *authRequest) mo.Result[LoginResponse] {
-	token, err := h.userService.Login(c.Request.Context(), req.Phone, req.Password)
-	if err != nil {
-		return mo.Err[LoginResponse](utils.Err(http.StatusUnauthorized, err))
-	}
-
-	return mo.Ok(LoginResponse{Token: token})
+func (h *AuthHandler) Login(req wrap.JSON[authRequest]) mo.Result[LoginResponse] {
+	return mo.Ok(LoginResponse{Token: req.Data.Phone})
 }
