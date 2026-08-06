@@ -42,14 +42,14 @@ func WrapTyped[Req any, Res any](h TypedHandler[Req, Res]) gin.HandlerFunc {
 func Wrap1[T1 any, PT1 interface {
 	*T1
 	Extractor
-}, Res any](h func(t1 T1) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(*t1))
+		handleResult(c, h(c, *t1))
 	}
 }
 
@@ -59,7 +59,7 @@ func Wrap2[T1, T2 any, PT1 interface {
 }, PT2 interface {
 	*T2
 	Extractor
-}, Res any](h func(t1 T1, t2 T2) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1, t2 T2) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		t2 := new(T2)
@@ -71,7 +71,7 @@ func Wrap2[T1, T2 any, PT1 interface {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(*t1, *t2))
+		handleResult(c, h(c, *t1, *t2))
 	}
 }
 
@@ -84,7 +84,7 @@ func Wrap3[T1, T2, T3 any, PT1 interface {
 }, PT3 interface {
 	*T3
 	Extractor
-}, Res any](h func(t1 T1, t2 T2, t3 T3) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1, t2 T2, t3 T3) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		t2 := new(T2)
@@ -101,7 +101,7 @@ func Wrap3[T1, T2, T3 any, PT1 interface {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(*t1, *t2, *t3))
+		handleResult(c, h(c, *t1, *t2, *t3))
 	}
 }
 
@@ -117,7 +117,7 @@ func Wrap4[T1, T2, T3, T4 any, PT1 interface {
 }, PT4 interface {
 	*T4
 	Extractor
-}, Res any](h func(t1 T1, t2 T2, t3 T3, t4 T4) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1, t2 T2, t3 T3, t4 T4) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		t2 := new(T2)
@@ -139,7 +139,7 @@ func Wrap4[T1, T2, T3, T4 any, PT1 interface {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(*t1, *t2, *t3, *t4))
+		handleResult(c, h(c, *t1, *t2, *t3, *t4))
 	}
 }
 
@@ -158,7 +158,7 @@ func Wrap5[T1, T2, T3, T4, T5 any, PT1 interface {
 }, PT5 interface {
 	*T5
 	Extractor
-}, Res any](h func(t1 T1, t2 T2, t3 T3, t4 T4, t5 T5) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1, t2 T2, t3 T3, t4 T4, t5 T5) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		t2 := new(T2)
@@ -185,7 +185,7 @@ func Wrap5[T1, T2, T3, T4, T5 any, PT1 interface {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(*t1, *t2, *t3, *t4, *t5))
+		handleResult(c, h(c, *t1, *t2, *t3, *t4, *t5))
 	}
 }
 
@@ -246,7 +246,7 @@ func Wrap(h any) gin.HandlerFunc {
 
 			var appErr *utils.Response
 			if errors.As(err, &appErr) {
-				c.JSON(appErr.Code, gin.H{"code": appErr.Code, "error": appErr.Message})
+				c.JSON(appErr.Code, appErr)
 			} else {
 				c.JSON(http.StatusInternalServerError, utils.Err(utils.CodeError, err))
 			}
@@ -264,7 +264,7 @@ func handleResult[Res any](c *gin.Context, result mo.Result[Res]) {
 		err := result.Error()
 		var appErr *utils.Response
 		if errors.As(err, &appErr) {
-			c.JSON(appErr.Code, gin.H{"code": appErr.Code, "error": appErr.Message})
+			c.JSON(http.StatusOK, appErr)
 		} else {
 			c.JSON(http.StatusInternalServerError, utils.Err(utils.CodeError, err))
 		}

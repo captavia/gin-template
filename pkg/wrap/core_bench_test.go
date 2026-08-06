@@ -43,20 +43,20 @@ type BenchResponse struct {
 }
 
 // 值传递版本的 handler
-func handlerValue(req JSON[BenchRequest]) mo.Result[BenchResponse] {
+func handlerValue(c *gin.Context, req JSON[BenchRequest]) mo.Result[BenchResponse] {
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
 // 指针传递版本的 handler（模拟旧实现）
-func handlerPointer(req *JSON[BenchRequest]) mo.Result[BenchResponse] {
+func handlerPointer(c *gin.Context, req *JSON[BenchRequest]) mo.Result[BenchResponse] {
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
-func handlerSmallValue(req JSON[SmallRequest]) mo.Result[BenchResponse] {
+func handlerSmallValue(c *gin.Context, req JSON[SmallRequest]) mo.Result[BenchResponse] {
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
-func handlerLargeValue(req JSON[LargeRequest]) mo.Result[BenchResponse] {
+func handlerLargeValue(c *gin.Context, req JSON[LargeRequest]) mo.Result[BenchResponse] {
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
@@ -64,14 +64,14 @@ func handlerLargeValue(req JSON[LargeRequest]) mo.Result[BenchResponse] {
 func Wrap1Pointer[T1 any, PT1 interface {
 	*T1
 	Extractor
-}, Res any](h func(t1 PT1) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 PT1) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(PT1(t1)))
+		handleResult(c, h(c, PT1(t1)))
 	}
 }
 
