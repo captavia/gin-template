@@ -39,6 +39,6 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
-func (h *AuthHandler) Login(c *gin.Context, req wrap.JSON[authRequest]) mo.Result[LoginResponse] {
+func (h *AuthHandler) Login(c *gin.Context, req *wrap.JSON[authRequest]) mo.Result[LoginResponse] {
 	return mo.Ok(LoginResponse{Token: req.Data.Phone})
 }
