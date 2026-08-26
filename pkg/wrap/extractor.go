@@ -11,24 +11,34 @@ type Extractor interface {
 	Extract(c *gin.Context) error
 }
 
-// Defaulter 由请求结构体实现，用于在绑定前填充默认值。
-// 绑定顺序与 json 填充结构体再 Unmarshal 一致：先调用 Default 赋默认值，
-// 再由请求参数覆盖其中出现的字段，缺失的字段保留默认值。
 type Defaulter interface {
 	Default()
 }
 
-// applyDefaults 检测 data 是否实现了 Defaulter，若是则调用其 Default 方法。
+type Validator interface {
+	Validate() error
+}
+
 func applyDefaults(data any) {
 	if d, ok := data.(Defaulter); ok {
 		d.Default()
 	}
 }
 
+func applyValidators(data any) error {
+	if d, ok := data.(Validator); ok {
+		return d.Validate()
+	}
+	return nil
+}
+
 type Path[T any] struct{ Data T }
 
 func (p *Path[T]) Extract(c *gin.Context) error {
 	applyDefaults(&p.Data)
+	if e := applyValidators(&p.Data); e != nil {
+		return e
+	}
 	return c.ShouldBindUri(&p.Data)
 }
 
@@ -36,6 +46,9 @@ type Query[T any] struct{ Data T }
 
 func (q *Query[T]) Extract(c *gin.Context) error {
 	applyDefaults(&q.Data)
+	if e := applyValidators(&q.Data); e != nil {
+		return e
+	}
 	return c.ShouldBindWith(&q.Data, binding.Query)
 }
 
@@ -43,6 +56,9 @@ type JSON[T any] struct{ Data T }
 
 func (j *JSON[T]) Extract(c *gin.Context) error {
 	applyDefaults(&j.Data)
+	if e := applyValidators(&j.Data); e != nil {
+		return e
+	}
 	return c.ShouldBindJSON(&j.Data)
 }
 
@@ -50,6 +66,9 @@ type File[T any] struct{ Data T }
 
 func (f *File[T]) Extract(c *gin.Context) error {
 	applyDefaults(&f.Data)
+	if e := applyValidators(&f.Data); e != nil {
+		return e
+	}
 	return c.ShouldBindWith(&f.Data, binding.FormMultipart)
 }
 
