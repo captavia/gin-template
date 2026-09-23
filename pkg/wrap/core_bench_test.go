@@ -60,24 +60,23 @@ func handlerLargeValue(c *gin.Context, req JSON[LargeRequest]) mo.Result[BenchRe
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
-// 模拟旧的指针版本 Wrap1
-func Wrap1Pointer[T1 any, PT1 interface {
+func Wrap1Value[T1 any, PT1 interface {
 	*T1
 	Extractor
-}, Res any](h func(c *gin.Context, t1 PT1) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 T1) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		if err := PT1(t1).Extract(c); err != nil {
 			handleExtractError(c, err)
 			return
 		}
-		handleResult(c, h(c, PT1(t1)))
+		handleResult(c, h(c, *t1))
 	}
 }
 
 func BenchmarkWrap1_Value_Normal(b *testing.B) {
 	gin.SetMode(gin.ReleaseMode)
-	handler := Wrap1(handlerValue)
+	handler := Wrap1Value(handlerValue)
 
 	jsonBody := `{"name":"test","email":"test@example.com","age":25,"address":"123 Main St"}`
 
@@ -96,7 +95,7 @@ func BenchmarkWrap1_Value_Normal(b *testing.B) {
 
 func BenchmarkWrap1_Pointer_Normal(b *testing.B) {
 	gin.SetMode(gin.ReleaseMode)
-	handler := Wrap1Pointer(handlerPointer)
+	handler := Wrap1(handlerPointer)
 
 	jsonBody := `{"name":"test","email":"test@example.com","age":25,"address":"123 Main St"}`
 
@@ -115,7 +114,7 @@ func BenchmarkWrap1_Pointer_Normal(b *testing.B) {
 
 func BenchmarkWrap1_Value_Small(b *testing.B) {
 	gin.SetMode(gin.ReleaseMode)
-	handler := Wrap1(handlerSmallValue)
+	handler := Wrap1Value(handlerSmallValue)
 
 	jsonBody := `{"id":"123","name":"test"}`
 
@@ -134,7 +133,7 @@ func BenchmarkWrap1_Value_Small(b *testing.B) {
 
 func BenchmarkWrap1_Value_Large(b *testing.B) {
 	gin.SetMode(gin.ReleaseMode)
-	handler := Wrap1(handlerLargeValue)
+	handler := Wrap1Value(handlerLargeValue)
 
 	jsonBody := `{"field1":"a","field2":"b","field3":"c","field4":"d","field5":"e","field6":"f","field7":"g","field8":"h","field9":"i","field10":"j","numbers":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50]}`
 
