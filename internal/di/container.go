@@ -32,6 +32,7 @@ func BuildContainer(cfg *config.Config) do.Injector {
 		do.Provide(injector, service.NewJwtService)
 		do.Provide(injector, service.NewRBACService)
 		do.Provide(injector, service.NewAuthService)
+		do.Provide(injector, service.NewS3Service)
 	}
 
 	// 注册 Handlers层

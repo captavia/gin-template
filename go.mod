@@ -11,7 +11,7 @@ require (
 	github.com/nats-io/nats.go v1.41.2
 	github.com/pelletier/go-toml/v2 v2.3.0
 	github.com/redis/go-redis/v9 v9.19.0
-	github.com/samber/do v1.6.0
+	github.com/samber/do/v2 v2.0.0
 	github.com/samber/lo v1.53.0
 	github.com/samber/mo v1.16.0
 	go.uber.org/zap v1.28.0
@@ -61,7 +61,6 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
-	github.com/samber/do/v2 v2.0.0 // indirect
 	github.com/samber/go-type-to-string v1.8.0 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
