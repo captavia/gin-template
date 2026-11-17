@@ -27,18 +27,16 @@ func NewJwtService(i do.Injector) (*JwtService, error) {
 func (s *JwtService) GenerateToken(userID uint) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(now),
-		},
+		UserID:    userID,
+		ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
+		IssuedAt:  jwt.NewNumericDate(now),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.secret)
 }
 
 func (s *JwtService) ParseToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		return s.secret, nil
 	})
 	if err != nil {
