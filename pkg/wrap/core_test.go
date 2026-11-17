@@ -1,8 +1,10 @@
 package wrap
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,78 +37,79 @@ type TestQueryReq struct {
 	Keyword string `form:"keyword"`
 }
 
-// TestWrapTyped tests WrapTyped function
-func TestWrapTyped(t *testing.T) {
+// TestWrap0 tests Wrap0 function across JSON, HTML, HTMLTemplate, and Redirect responses
+func TestWrap0(t *testing.T) {
 	tests := []struct {
-		name           string
-		handler        TypedHandler[TestReq, TestRes]
-		body           string
-		wantStatusCode int
-		wantContains   string
+		name            string
+		handler         func(c *gin.Context) mo.Result[TestRes]
+		setupEngine     func(*gin.Engine)
+		wantStatusCode  int
+		wantContentType string
+		wantLocation    string
+		wantContains    string
 	}{
 		{
-			name: "successful request",
-			handler: func(ctx *gin.Context, req *TestReq) mo.Result[TestRes] {
-				return mo.Ok(TestRes{Message: fmt.Sprintf("Hello %s", req.Name)})
+			name: "json ok",
+			handler: func(c *gin.Context) mo.Result[TestRes] {
+				return mo.Ok(TestRes{Message: "pong"})
 			},
-			body:           `{"name":"John","age":30}`,
-			wantStatusCode: http.StatusOK,
-			wantContains:   "Hello John",
+			wantStatusCode:  http.StatusOK,
+			wantContentType: "application/json",
+			wantContains:    "pong",
 		},
 		{
-			name: "handler returns error",
-			handler: func(ctx *gin.Context, req *TestReq) mo.Result[TestRes] {
-				return mo.Err[TestRes](errors.New("internal error"))
+			name: "html raw",
+			handler: func(c *gin.Context) mo.Result[TestRes] {
+				return utils.HTML[TestRes]("<h1>Hello</h1>")
 			},
-			body:           `{"name":"John","age":30}`,
-			wantStatusCode: http.StatusInternalServerError,
-			wantContains:   "internal error",
+			wantStatusCode:  http.StatusOK,
+			wantContentType: "text/html",
+			wantContains:    "<h1>Hello</h1>",
 		},
 		{
-			name: "invalid JSON",
-			handler: func(ctx *gin.Context, req *TestReq) mo.Result[TestRes] {
-				return mo.Ok(TestRes{Message: "should not reach here"})
+			name: "html template",
+			handler: func(c *gin.Context) mo.Result[TestRes] {
+				return utils.HTMLTemplate[TestRes]("hello.tmpl", gin.H{"Name": "World"})
 			},
-			body:           `{invalid json}`,
-			wantStatusCode: http.StatusBadRequest,
-			wantContains:   "请求参数错误",
+			setupEngine: func(e *gin.Engine) {
+				e.SetHTMLTemplate(template.Must(template.New("hello.tmpl").Parse("<h1>Hello {{.Name}}</h1>")))
+			},
+			wantStatusCode:  http.StatusOK,
+			wantContentType: "text/html",
+			wantContains:    "<h1>Hello World</h1>",
 		},
 		{
-			name: "empty body",
-			handler: func(ctx *gin.Context, req *TestReq) mo.Result[TestRes] {
-				return mo.Ok(TestRes{Message: "Empty request"})
+			name: "redirect",
+			handler: func(c *gin.Context) mo.Result[TestRes] {
+				return utils.Redirect[TestRes]("https://example.com/callback")
 			},
-			body:           "",
-			wantStatusCode: http.StatusOK,
-			wantContains:   "Empty request",
-		},
-		{
-			name: "handler returns app error",
-			handler: func(ctx *gin.Context, req *TestReq) mo.Result[TestRes] {
-				return mo.Err[TestRes](&utils.Response{Code: http.StatusUnauthorized, Message: "unauthorized"})
-			},
-			body:           `{"name":"John"}`,
-			wantStatusCode: http.StatusUnauthorized,
-			wantContains:   "unauthorized",
+			wantStatusCode: http.StatusFound,
+			wantLocation:   "https://example.com/callback",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest("POST", "/test", strings.NewReader(tt.body))
-			c.Request.Header.Set("Content-Type", "application/json")
+			c, engine := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest("GET", "/test", nil)
+			if tt.setupEngine != nil {
+				tt.setupEngine(engine)
+			}
 
-			handler := WrapTyped(tt.handler)
-			handler(c)
+			Wrap0(tt.handler)(c)
 
 			if w.Code != tt.wantStatusCode {
 				t.Errorf("got status code %v, want %v", w.Code, tt.wantStatusCode)
 			}
-
-			if !strings.Contains(w.Body.String(), tt.wantContains) {
-				t.Errorf("response body %v does not contain %v", w.Body.String(), tt.wantContains)
+			if tt.wantContentType != "" && !strings.Contains(w.Header().Get("Content-Type"), tt.wantContentType) {
+				t.Errorf("Content-Type %q does not contain %q", w.Header().Get("Content-Type"), tt.wantContentType)
+			}
+			if tt.wantLocation != "" && w.Header().Get("Location") != tt.wantLocation {
+				t.Errorf("Location %q, want %q", w.Header().Get("Location"), tt.wantLocation)
+			}
+			if tt.wantContains != "" && !strings.Contains(w.Body.String(), tt.wantContains) {
+				t.Errorf("response body %q does not contain %q", w.Body.String(), tt.wantContains)
 			}
 		})
 	}
@@ -119,7 +122,9 @@ func TestWrap1(t *testing.T) {
 		handler        func(c *gin.Context, req *JSON[TestReq]) mo.Result[TestRes]
 		body           string
 		wantStatusCode int
+		wantCode       int
 		wantContains   string
+		wantLocation   string
 	}{
 		{
 			name: "successful request",
@@ -128,6 +133,7 @@ func TestWrap1(t *testing.T) {
 			},
 			body:           `{"name":"Alice","age":25}`,
 			wantStatusCode: http.StatusOK,
+			wantCode:       utils.CodeSuccess,
 			wantContains:   "Alice",
 		},
 		{
@@ -136,7 +142,8 @@ func TestWrap1(t *testing.T) {
 				return mo.Ok(TestRes{Message: "should not reach"})
 			},
 			body:           `{invalid}`,
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
+			wantCode:       utils.CodeInvalidParameter,
 			wantContains:   "request parse error",
 		},
 		{
@@ -145,27 +152,60 @@ func TestWrap1(t *testing.T) {
 				return mo.Err[TestRes](errors.New("business error"))
 			},
 			body:           `{"name":"Bob"}`,
-			wantStatusCode: http.StatusInternalServerError,
+			wantStatusCode: http.StatusOK,
+			wantCode:       utils.CodeError,
 			wantContains:   "business error",
+		},
+		{
+			name: "handler returns html",
+			handler: func(c *gin.Context, req *JSON[TestReq]) mo.Result[TestRes] {
+				return utils.HTML[TestRes](fmt.Sprintf("<p>%s</p>", req.Data.Name))
+			},
+			body:           `{"name":"Eve"}`,
+			wantStatusCode: http.StatusOK,
+			wantContains:   "<p>Eve</p>",
+		},
+		{
+			name: "handler returns redirect",
+			handler: func(c *gin.Context, req *JSON[TestReq]) mo.Result[TestRes] {
+				return utils.Redirect[TestRes]("/users/" + req.Data.Name)
+			},
+			body:           `{"name":"charlie"}`,
+			wantStatusCode: http.StatusFound,
+			wantLocation:   "/users/charlie",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest("POST", "/test", strings.NewReader(tt.body))
-			c.Request.Header.Set("Content-Type", "application/json")
+			_, engine := gin.CreateTestContext(w)
+			engine.POST("/test", Wrap1(tt.handler))
 
-			handler := Wrap1(tt.handler)
-			handler(c)
+			req := httptest.NewRequest("POST", "/test", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			engine.ServeHTTP(w, req)
 
 			if w.Code != tt.wantStatusCode {
 				t.Errorf("got status code %v, want %v", w.Code, tt.wantStatusCode)
 			}
 
-			if !strings.Contains(w.Body.String(), tt.wantContains) {
+			if tt.wantLocation != "" && w.Header().Get("Location") != tt.wantLocation {
+				t.Errorf("got Location %q, want %q", w.Header().Get("Location"), tt.wantLocation)
+			}
+
+			if tt.wantContains != "" && !strings.Contains(w.Body.String(), tt.wantContains) {
 				t.Errorf("response body %v does not contain %v", w.Body.String(), tt.wantContains)
+			}
+
+			if tt.wantLocation == "" && strings.Contains(w.Header().Get("Content-Type"), "application/json") {
+				var resp utils.JsonResponse
+				if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+					t.Fatalf("failed to unmarshal json response: %v", err)
+				}
+				if resp.Code != tt.wantCode {
+					t.Errorf("got json code %v, want %v", resp.Code, tt.wantCode)
+				}
 			}
 		})
 	}
@@ -184,6 +224,7 @@ func TestWrap2(t *testing.T) {
 		pathID         string
 		query          string
 		wantStatusCode int
+		wantCode       int
 		wantContains   string
 	}{
 		{
@@ -191,13 +232,15 @@ func TestWrap2(t *testing.T) {
 			pathID:         "123",
 			query:          "keyword=search",
 			wantStatusCode: http.StatusOK,
+			wantCode:       utils.CodeSuccess,
 			wantContains:   "ID: 123, Keyword: search",
 		},
 		{
 			name:           "missing path param",
 			pathID:         "",
 			query:          "keyword=search",
-			wantStatusCode: http.StatusBadRequest,
+			wantStatusCode: http.StatusOK,
+			wantCode:       utils.CodeInvalidParameter,
 			wantContains:   "request parse error",
 		},
 	}
@@ -221,6 +264,14 @@ func TestWrap2(t *testing.T) {
 
 			if !strings.Contains(w.Body.String(), tt.wantContains) {
 				t.Errorf("response body %v does not contain %v", w.Body.String(), tt.wantContains)
+			}
+
+			var resp utils.JsonResponse
+			if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+				t.Fatalf("failed to unmarshal json response: %v", err)
+			}
+			if resp.Code != tt.wantCode {
+				t.Errorf("got json code %v, want %v", resp.Code, tt.wantCode)
 			}
 		})
 	}
@@ -284,170 +335,213 @@ func TestWrap5(t *testing.T) {
 	}
 }
 
-// TestWrap tests the generic Wrap function with reflection
-func TestWrap(t *testing.T) {
-	tests := []struct {
-		name           string
-		handler        any
-		setup          func(*gin.Context)
-		body           string
-		wantStatusCode int
-		wantContains   string
-		shouldPanic    bool
-		panicContains  string
-	}{
-		{
-			name: "valid handler with one param",
-			handler: func(req *JSON[TestReq]) mo.Result[TestRes] {
-				return mo.Ok(TestRes{Message: fmt.Sprintf("Hello %s", req.Data.Name)})
-			},
-			body:           `{"name":"World"}`,
-			wantStatusCode: http.StatusOK,
-			wantContains:   "Hello World",
-		},
-		{
-			name: "valid handler with two params",
-			handler: func(p1 *Path[TestPathReq], p2 *Query[TestQueryReq]) mo.Result[TestRes] {
-				return mo.Ok(TestRes{Message: fmt.Sprintf("ID: %s", p1.Data.ID)})
-			},
-			setup: func(c *gin.Context) {
-				c.Params = []gin.Param{{Key: "id", Value: "999"}}
-			},
-			wantStatusCode: http.StatusOK,
-			wantContains:   "ID: 999",
-		},
-		{
-			name: "handler returns error",
-			handler: func(req *JSON[TestReq]) mo.Result[TestRes] {
-				return mo.Err[TestRes](errors.New("test error"))
-			},
-			body:           `{"name":"test"}`,
-			wantStatusCode: http.StatusInternalServerError,
-			wantContains:   "test error",
-		},
-		{
-			name: "handler returns app error",
-			handler: func(req *JSON[TestReq]) mo.Result[TestRes] {
-				return mo.Err[TestRes](&utils.Response{Code: http.StatusForbidden, Message: "forbidden"})
-			},
-			body:           `{"name":"test"}`,
-			wantStatusCode: http.StatusForbidden,
-			wantContains:   "forbidden",
-		},
-		{
-			name:          "non-function handler panics",
-			handler:       "not a function",
-			shouldPanic:   true,
-			panicContains: "必须是一个函数",
-		},
-		{
-			name: "non-pointer param panics",
-			handler: func(req JSON[TestReq]) mo.Result[TestRes] {
-				return mo.Ok(TestRes{})
-			},
-			shouldPanic:   true,
-			panicContains: "must be pointer of Extractor",
-		},
-		{
-			name: "multiple return values panics",
-			handler: func(req *JSON[TestReq]) (mo.Result[TestRes], error) {
-				return mo.Ok(TestRes{}), nil
-			},
-			shouldPanic:   true,
-			panicContains: "must have one return value",
-		},
-	}
+// TestHandleResultWithParams tests handleResultWithParams for JSON, HTML, HTMLTemplate, and Redirect responses
+func TestHandleResultWithParams(t *testing.T) {
+	t.Run("success result wraps in JsonResponse", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/test", nil)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.shouldPanic {
-				defer func() {
-					r := recover()
-					if r == nil {
-						t.Error("expected panic but got none")
-						return
-					}
-					panicMsg := fmt.Sprint(r)
-					if !strings.Contains(panicMsg, tt.panicContains) {
-						t.Errorf("panic message %v does not contain %v", panicMsg, tt.panicContains)
-					}
-				}()
-				Wrap(tt.handler)
-				return
-			}
+		handleResultWithParams(c, mo.Ok(TestRes{Message: "success"}))
 
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+		if w.Code != http.StatusOK {
+			t.Fatalf("got status code %v, want %v", w.Code, http.StatusOK)
+		}
+		var resp utils.JsonResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+		if resp.Code != utils.CodeSuccess || resp.Message != utils.SuccessMessage {
+			t.Fatalf("got %+v, want Code=%d Message=%q", resp, utils.CodeSuccess, utils.SuccessMessage)
+		}
+		if !strings.Contains(w.Body.String(), "success") {
+			t.Fatalf("body %q does not contain 'success'", w.Body.String())
+		}
+	})
 
-			if tt.body != "" {
-				c.Request = httptest.NewRequest("POST", "/test", strings.NewReader(tt.body))
-				c.Request.Header.Set("Content-Type", "application/json")
-			} else {
+	t.Run("generic error result", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/test", nil)
+
+		handleResultWithParams(c, mo.Err[TestRes](errors.New("failed")))
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("got status code %v, want %v", w.Code, http.StatusOK)
+		}
+		if !c.IsAborted() {
+			t.Fatal("expected context to be aborted")
+		}
+		var resp utils.JsonResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+		if resp.Code != utils.CodeError || resp.Message != "failed" {
+			t.Fatalf("got %+v, want Code=%d Message='failed'", resp, utils.CodeError)
+		}
+	})
+
+	t.Run("app JsonResponse error result", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/test", nil)
+
+		handleResultWithParams(c, mo.Err[TestRes](&utils.JsonResponse{Code: http.StatusNotFound, Message: "not found"}))
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("got status code %v, want %v", w.Code, http.StatusOK)
+		}
+		if !c.IsAborted() {
+			t.Fatal("expected context to be aborted")
+		}
+		var resp utils.JsonResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+		if resp.Code != http.StatusNotFound || resp.Message != "not found" {
+			t.Fatalf("got %+v, want Code=404 Message='not found'", resp)
+		}
+	})
+
+	t.Run("HTML shorthand and custom HTMLResponse error", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			invoke   func(*gin.Context)
+			wantCode int
+			want     string
+		}{
+			{
+				name: "utils.HTML shorthand",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, utils.HTML[TestRes]("<h1>Hello</h1>"))
+				},
+				wantCode: http.StatusOK,
+				want:     "<h1>Hello</h1>",
+			},
+			{
+				name: "custom status HTMLResponse",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, mo.Err[TestRes](&utils.HTMLResponse{Code: http.StatusCreated, Body: "<p>created</p>"}))
+				},
+				wantCode: http.StatusCreated,
+				want:     "<p>created</p>",
+			},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				w := httptest.NewRecorder()
+				c, _ := gin.CreateTestContext(w)
 				c.Request = httptest.NewRequest("GET", "/test", nil)
-			}
 
-			if tt.setup != nil {
-				tt.setup(c)
-			}
+				tc.invoke(c)
 
-			handler := Wrap(tt.handler)
-			handler(c)
+				if w.Code != tc.wantCode {
+					t.Fatalf("got status %v, want %v", w.Code, tc.wantCode)
+				}
+				if !strings.Contains(w.Header().Get("Content-Type"), "text/html") {
+					t.Fatalf("Content-Type = %q, want text/html", w.Header().Get("Content-Type"))
+				}
+				if w.Body.String() != tc.want {
+					t.Fatalf("body = %q, want %q", w.Body.String(), tc.want)
+				}
+			})
+		}
+	})
 
-			if w.Code != tt.wantStatusCode {
-				t.Errorf("got status code %v, want %v", w.Code, tt.wantStatusCode)
-			}
+	t.Run("HTMLTemplate shorthand and custom HTMLResponse template error", func(t *testing.T) {
+		tmpl := template.Must(template.New("hello.tmpl").Parse("<h1>Hello {{.Name}}</h1>"))
 
-			if tt.wantContains != "" && !strings.Contains(w.Body.String(), tt.wantContains) {
-				t.Errorf("response body %v does not contain %v", w.Body.String(), tt.wantContains)
-			}
-		})
-	}
-}
+		cases := []struct {
+			name   string
+			invoke func(*gin.Context)
+		}{
+			{
+				name: "utils.HTMLTemplate shorthand",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, utils.HTMLTemplate[TestRes]("hello.tmpl", gin.H{"Name": "World"}))
+				},
+			},
+			{
+				name: "custom HTMLResponse template",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, mo.Err[TestRes](&utils.HTMLResponse{
+						Code:       http.StatusOK,
+						Template:   "hello.tmpl",
+						Data:       gin.H{"Name": "World"},
+						IsTemplate: true,
+					}))
+				},
+			},
+		}
 
-// TestHandleResult tests handleResult function
-func TestHandleResult(t *testing.T) {
-	tests := []struct {
-		name           string
-		result         mo.Result[TestRes]
-		wantStatusCode int
-		wantContains   string
-	}{
-		{
-			name:           "success result",
-			result:         mo.Ok(TestRes{Message: "success"}),
-			wantStatusCode: http.StatusOK,
-			wantContains:   "success",
-		},
-		{
-			name:           "error result",
-			result:         mo.Err[TestRes](errors.New("failed")),
-			wantStatusCode: http.StatusInternalServerError,
-			wantContains:   "failed",
-		},
-		{
-			name:           "app error result",
-			result:         mo.Err[TestRes](&utils.Response{Code: http.StatusNotFound, Message: "not found"}),
-			wantStatusCode: http.StatusOK,
-			wantContains:   "not found",
-		},
-	}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				w := httptest.NewRecorder()
+				c, engine := gin.CreateTestContext(w)
+				c.Request = httptest.NewRequest("GET", "/test", nil)
+				engine.SetHTMLTemplate(tmpl)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+				tc.invoke(c)
 
-			handleResult(c, tt.result)
+				if w.Code != http.StatusOK {
+					t.Fatalf("got status %v, want %v", w.Code, http.StatusOK)
+				}
+				if !strings.Contains(w.Header().Get("Content-Type"), "text/html") {
+					t.Fatalf("Content-Type = %q, want text/html", w.Header().Get("Content-Type"))
+				}
+				if w.Body.String() != "<h1>Hello World</h1>" {
+					t.Fatalf("body = %q, want %q", w.Body.String(), "<h1>Hello World</h1>")
+				}
+			})
+		}
+	})
 
-			if w.Code != tt.wantStatusCode {
-				t.Errorf("got status code %v, want %v", w.Code, tt.wantStatusCode)
-			}
+	t.Run("Redirect shorthand and custom code RedirectResponse error", func(t *testing.T) {
+		cases := []struct {
+			name         string
+			invoke       func(*gin.Context)
+			wantCode     int
+			wantLocation string
+		}{
+			{
+				name: "utils.Redirect shorthand",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, utils.Redirect[TestRes]("https://example.com/callback"))
+				},
+				wantCode:     http.StatusFound,
+				wantLocation: "https://example.com/callback",
+			},
+			{
+				name: "custom 301 RedirectResponse error",
+				invoke: func(c *gin.Context) {
+					handleResultWithParams(c, mo.Err[TestRes](&utils.RedirectResponse{
+						Code:     http.StatusMovedPermanently,
+						Location: "/moved",
+					}))
+				},
+				wantCode:     http.StatusMovedPermanently,
+				wantLocation: "/moved",
+			},
+		}
 
-			if !strings.Contains(w.Body.String(), tt.wantContains) {
-				t.Errorf("response body %v does not contain %v", w.Body.String(), tt.wantContains)
-			}
-		})
-	}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				w := httptest.NewRecorder()
+				c, _ := gin.CreateTestContext(w)
+				c.Request = httptest.NewRequest("GET", "/test", nil)
+
+				tc.invoke(c)
+
+				if w.Code != tc.wantCode {
+					t.Fatalf("got status %v, want %v", w.Code, tc.wantCode)
+				}
+				if got := w.Header().Get("Location"); got != tc.wantLocation {
+					t.Fatalf("got Location %q, want %q", got, tc.wantLocation)
+				}
+			})
+		}
+	})
 }
 
 // TestHandleExtractError tests handleExtractError function
@@ -455,10 +549,22 @@ func TestHandleExtractError(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	handleExtractError(c, errors.New("parse error"))
+	handleExtractError(c, &JSON[TestReq]{}, errors.New("parse error"))
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("got status code %v, want %v", w.Code, http.StatusBadRequest)
+	if w.Code != http.StatusOK {
+		t.Errorf("got status code %v, want %v", w.Code, http.StatusOK)
+	}
+
+	if !c.IsAborted() {
+		t.Error("expected context to be aborted")
+	}
+
+	var resp utils.JsonResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal json response: %v", err)
+	}
+	if resp.Code != utils.CodeInvalidParameter {
+		t.Errorf("got code %v, want %v", resp.Code, utils.CodeInvalidParameter)
 	}
 
 	if !strings.Contains(w.Body.String(), "request parse error") {

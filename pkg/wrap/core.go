@@ -1,7 +1,6 @@
 package wrap
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -163,16 +162,35 @@ func Wrap5[T1, T2, T3, T4, T5 any, PT1 interface {
 func handleResultWithParams[Res any](c *gin.Context, result mo.Result[Res], params ...any) {
 	if result.IsError() {
 		err := result.Error()
-		if appErr, ok := errors.AsType[*utils.Response](err); ok {
-			c.JSON(http.StatusOK, appErr)
-		} else {
+		switch resp := err.(type) {
+		case *utils.JsonResponse:
+			c.JSON(http.StatusOK, resp)
+		case *utils.HTMLResponse:
+			writeHTMLResponse(c, resp)
+		case *utils.RedirectResponse:
+			writeRedirectResponse(c, resp)
+		case nil:
+		default:
 			c.JSON(http.StatusOK, utils.Err(utils.CodeError, err))
 		}
 		c.Abort()
 		return
 	}
+
 	data := result.MustGet()
 	c.JSON(http.StatusOK, utils.Ok(data))
+}
+
+func writeHTMLResponse(c *gin.Context, resp *utils.HTMLResponse) {
+	if resp.IsTemplate || resp.Template != "" {
+		c.HTML(resp.Code, resp.Template, resp.Data)
+		return
+	}
+	c.Data(resp.Code, "text/html; charset=utf-8", []byte(resp.Body))
+}
+
+func writeRedirectResponse(c *gin.Context, resp *utils.RedirectResponse) {
+	c.Redirect(resp.Code, resp.Location)
 }
 
 // for log

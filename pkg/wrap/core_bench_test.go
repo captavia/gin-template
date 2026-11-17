@@ -67,10 +67,10 @@ func Wrap1Value[T1 any, PT1 interface {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
-		handleResult(c, h(c, *t1))
+		handleResultWithParams(c, h(c, *t1), t1)
 	}
 }
 
@@ -216,22 +216,19 @@ func BenchmarkDirectBind_Normal(b *testing.B) {
 	}
 }
 
-// WrapTyped 版本
-func handlerTyped(c *gin.Context, req *BenchRequest) mo.Result[BenchResponse] {
+// Wrap0 版本
+func handlerWrap0(c *gin.Context) mo.Result[BenchResponse] {
 	return mo.Ok(BenchResponse{Status: "ok"})
 }
 
-func BenchmarkWrapTyped_Normal(b *testing.B) {
+func BenchmarkWrap0_Normal(b *testing.B) {
 	gin.SetMode(gin.ReleaseMode)
-	handler := WrapTyped(handlerTyped)
-
-	jsonBody := `{"name":"test","email":"test@example.com","age":25,"address":"123 Main St"}`
+	handler := Wrap0(handlerWrap0)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest("POST", "/test", strings.NewReader(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
+		req := httptest.NewRequest("GET", "/test", nil)
 
 		c, _ := gin.CreateTestContext(w)
 		c.Request = req

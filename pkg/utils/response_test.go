@@ -54,8 +54,8 @@ func TestHTMLResponse(t *testing.T) {
 	if !res.IsError() {
 		t.Fatal("HTML() expected error-wrapped mo.Result")
 	}
-	var htmlResp *HTMLResponse
-	if !errors.As(res.Error(), &htmlResp) {
+	htmlResp, ok := errors.AsType[*HTMLResponse](res.Error())
+	if !ok {
 		t.Fatalf("HTML() error type = %T, want *HTMLResponse", res.Error())
 	}
 	if htmlResp.Code != http.StatusOK || htmlResp.Body != "<h1>hi</h1>" || htmlResp.IsTemplate {
@@ -66,8 +66,8 @@ func TestHTMLResponse(t *testing.T) {
 	if !tplRes.IsError() {
 		t.Fatal("HTMLTemplate() expected error-wrapped mo.Result")
 	}
-	var tplResp *HTMLResponse
-	if !errors.As(tplRes.Error(), &tplResp) {
+	tplResp, ok := errors.AsType[*HTMLResponse](tplRes.Error())
+	if !ok {
 		t.Fatalf("HTMLTemplate() error type = %T, want *HTMLResponse", tplRes.Error())
 	}
 	if tplResp.Code != http.StatusOK || tplResp.Template != "page.tmpl" || !tplResp.IsTemplate {
@@ -93,8 +93,8 @@ func TestRedirectResponse(t *testing.T) {
 	if !res.IsError() {
 		t.Fatal("Redirect() expected error-wrapped mo.Result")
 	}
-	var redirectResp *RedirectResponse
-	if !errors.As(res.Error(), &redirectResp) {
+	redirectResp, ok := errors.AsType[*RedirectResponse](res.Error())
+	if !ok {
 		t.Fatalf("Redirect() error type = %T, want *RedirectResponse", res.Error())
 	}
 	if redirectResp.Code != http.StatusFound || redirectResp.Location != "https://example.com/login" {
