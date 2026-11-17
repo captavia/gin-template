@@ -27,8 +27,8 @@ type authRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-func (h *AuthHandler) Register(c *gin.Context, req *authRequest) mo.Result[string] {
-	if err := h.userService.Register(c.Request.Context(), req.Phone, req.Password); err != nil {
+func (h *AuthHandler) Register(c *gin.Context, req *wrap.JSON[authRequest]) mo.Result[string] {
+	if err := h.userService.Register(c.Request.Context(), req.Data.Phone, req.Data.Password); err != nil {
 		return mo.Err[string](utils.Err(http.StatusConflict, err))
 	}
 

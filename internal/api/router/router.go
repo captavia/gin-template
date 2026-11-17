@@ -22,7 +22,7 @@ func SetupRouter(injector do.Injector) *gin.Engine {
 	authHandler := do.MustInvoke[*handler.AuthHandler](injector)
 
 	// -- 认证系统 --
-	apiV1.POST("/auth/register", wrap.WrapTyped(authHandler.Register))
+	apiV1.POST("/auth/register", wrap.Wrap1(authHandler.Register))
 	//apiV1.POST("/auth/login", wrap.WrapTyped(authHandler.Login))
 	apiV1.POST("/auth/login", wrap.Wrap1(authHandler.Login))
 
