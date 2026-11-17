@@ -4,38 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
+	"strings"
 	"template/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/samber/mo"
 )
 
-type TypedHandler[Req any, Res any] func(ctx *gin.Context, req *Req) mo.Result[Res]
-
-func WrapTyped[Req any, Res any](h TypedHandler[Req, Res]) gin.HandlerFunc {
+func Wrap0[Res any](h func(c *gin.Context) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req Req
-
-		if err := c.ShouldBind(&req); err != nil && err.Error() != "EOF" {
-			c.JSON(http.StatusBadRequest, utils.Err(utils.CodeInvalidParameter, fmt.Errorf("请求参数错误: %e", err)))
-			return
-		}
-
-		result := h(c, &req)
-
-		if result.IsError() {
-			err := result.Error()
-			var appErr *utils.Response
-			if errors.As(err, &appErr) {
-				c.JSON(appErr.Code, gin.H{"code": appErr.Code, "error": appErr.Message})
-			} else {
-				c.JSON(http.StatusInternalServerError, utils.Err(utils.CodeError, err))
-			}
-			return
-		}
-
-		c.JSON(http.StatusOK, utils.Ok(result.MustGet()))
+		handleResultWithParams(c, h(c))
 	}
 }
 
@@ -46,10 +24,10 @@ func Wrap1[T1 any, PT1 interface {
 	return func(c *gin.Context) {
 		t1 := new(T1)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
-		handleResult(c, h(c, t1))
+		handleResultWithParams(c, h(c, t1), t1)
 	}
 }
 
@@ -64,14 +42,14 @@ func Wrap2[T1, T2 any, PT1 interface {
 		t1 := new(T1)
 		t2 := new(T2)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
 		if err := PT2(t2).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t2, err)
 			return
 		}
-		handleResult(c, h(c, t1, t2))
+		handleResultWithParams(c, h(c, t1, t2), t1, t2)
 	}
 }
 
@@ -84,22 +62,24 @@ func Wrap3[T1, T2, T3 any, PT1 interface {
 }, PT3 interface {
 	*T3
 	Extractor
-}, Res any](h func(c *gin.Context, t1 PT1, PT2 PT2, PT3 PT3) mo.Result[Res]) gin.HandlerFunc {
+}, Res any](h func(c *gin.Context, t1 PT1, t2 PT2, t3 PT3) mo.Result[Res]) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		t1, t2, t3 := new(T1), new(T2), new(T3)
+		t1 := new(T1)
+		t2 := new(T2)
+		t3 := new(T3)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
 		if err := PT2(t2).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t2, err)
 			return
 		}
 		if err := PT3(t3).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t3, err)
 			return
 		}
-		handleResult(c, h(c, t1, t2, t3))
+		handleResultWithParams(c, h(c, t1, t2, t3), t1, t2, t3)
 	}
 }
 
@@ -119,22 +99,22 @@ func Wrap4[T1, T2, T3, T4 any, PT1 interface {
 	return func(c *gin.Context) {
 		t1, t2, t3, t4 := new(T1), new(T2), new(T3), new(T4)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
 		if err := PT2(t2).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t2, err)
 			return
 		}
 		if err := PT3(t3).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t3, err)
 			return
 		}
 		if err := PT4(t4).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t4, err)
 			return
 		}
-		handleResult(c, h(c, t1, t2, t3, t4))
+		handleResultWithParams(c, h(c, t1, t2, t3, t4), t1, t2, t3, t4)
 	}
 }
 
@@ -157,115 +137,62 @@ func Wrap5[T1, T2, T3, T4, T5 any, PT1 interface {
 	return func(c *gin.Context) {
 		t1, t2, t3, t4, t5 := new(T1), new(T2), new(T3), new(T4), new(T5)
 		if err := PT1(t1).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t1, err)
 			return
 		}
 		if err := PT2(t2).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t2, err)
 			return
 		}
 		if err := PT3(t3).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t3, err)
 			return
 		}
 		if err := PT4(t4).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t4, err)
 			return
 		}
 		if err := PT5(t5).Extract(c); err != nil {
-			handleExtractError(c, err)
+			handleExtractError(c, t5, err)
 			return
 		}
-		handleResult(c, h(c, t1, t2, t3, t4, t5))
+		handleResultWithParams(c, h(c, t1, t2, t3, t4, t5), t1, t2, t3, t4, t5)
 	}
 }
 
-func Wrap(h any) gin.HandlerFunc {
-	val := reflect.ValueOf(h)
-	typ := val.Type()
-
-	if typ.Kind() != reflect.Func {
-		panic("core.Wrap: 传入的 handler 必须是一个函数!")
-	}
-
-	numIn := typ.NumIn()
-	extractorInterface := reflect.TypeOf((*Extractor)(nil)).Elem()
-
-	argElemTypes := make([]reflect.Type, numIn)
-	for i := 0; i < numIn; i++ {
-		argType := typ.In(i)
-		if argType.Kind() != reflect.Ptr || !argType.Implements(extractorInterface) {
-			panic("core.Wrap: handler all args must be pointer of Extractor")
-		}
-		argElemTypes[i] = argType.Elem()
-	}
-
-	if typ.NumOut() != 1 {
-		panic("core.Wrap: handler must have one return value (mo.Result[T])")
-	}
-	outTyp := typ.Out(0)
-	isErrorMethod, ok1 := outTyp.MethodByName("IsError")
-	errorMethod, ok2 := outTyp.MethodByName("Error")
-	mustGetMethod, ok3 := outTyp.MethodByName("MustGet")
-
-	if !ok1 || !ok2 || !ok3 {
-		panic("core.Wrap: handler return type must be mo.Result[T]")
-	}
-
-	return func(c *gin.Context) {
-		args := make([]reflect.Value, numIn)
-
-		for i := 0; i < numIn; i++ {
-			argVal := reflect.New(argElemTypes[i])
-			extractor := argVal.Interface().(Extractor)
-
-			if err := extractor.Extract(c); err != nil {
-				handleExtractError(c, err)
-				return
-			}
-			args[i] = argVal
-		}
-
-		results := val.Call(args)
-		resVal := results[0]
-
-		isError := resVal.Method(isErrorMethod.Index).Call(nil)[0].Bool()
-
-		if isError {
-			errInterface := resVal.Method(errorMethod.Index).Call(nil)[0].Interface()
-			err := errInterface.(error)
-
-			var appErr *utils.Response
-			if errors.As(err, &appErr) {
-				c.JSON(appErr.Code, appErr)
-			} else {
-				c.JSON(http.StatusInternalServerError, utils.Err(utils.CodeError, err))
-			}
-			c.Abort()
-			return
-		}
-
-		data := resVal.Method(mustGetMethod.Index).Call(nil)[0].Interface()
-		c.JSON(http.StatusOK, utils.Ok(data))
-	}
-}
-
-func handleResult[Res any](c *gin.Context, result mo.Result[Res]) {
+func handleResultWithParams[Res any](c *gin.Context, result mo.Result[Res], params ...any) {
 	if result.IsError() {
 		err := result.Error()
-		var appErr *utils.Response
-		if errors.As(err, &appErr) {
+		if appErr, ok := errors.AsType[*utils.Response](err); ok {
 			c.JSON(http.StatusOK, appErr)
 		} else {
-			c.JSON(http.StatusInternalServerError, utils.Err(utils.CodeError, err))
+			c.JSON(http.StatusOK, utils.Err(utils.CodeError, err))
 		}
 		c.Abort()
 		return
 	}
-	c.JSON(http.StatusOK, utils.Ok(result.MustGet()))
+	data := result.MustGet()
+	c.JSON(http.StatusOK, utils.Ok(data))
 }
 
-func handleExtractError(c *gin.Context, err error) {
-	c.JSON(http.StatusBadRequest, utils.Err(utils.CodeInvalidParameter, fmt.Errorf("request parse error: %v", err)))
+// for log
+func formatParams(params []any) string {
+	if len(params) == 0 {
+		return "[]"
+	}
+	var result strings.Builder
+	result.WriteString("[")
+	for i, p := range params {
+		if i > 0 {
+			result.WriteString(", ")
+		}
+		result.WriteString(fmt.Sprintf("%v", p))
+	}
+	result.WriteString("]")
+	return result.String()
+}
+
+func handleExtractError(c *gin.Context, param any, err error) {
+	c.JSON(http.StatusOK, utils.Err(utils.CodeInvalidParameter, fmt.Errorf("request parse error: %w", err)))
 	c.Abort()
 }
